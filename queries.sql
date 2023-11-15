@@ -25,6 +25,6 @@ LEFT JOIN
 LEFT JOIN
   develop d ON c.company_id = d.company_id
 GROUP BY
-  c.company_id, c.name;
-
+  c.company_id, c.name
+LIMIT 5;
 
