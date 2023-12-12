@@ -7,22 +7,7 @@ database = 'lab4_games'
 host = 'localhost'
 port = '5432'
 
-query_3 = '''
-SELECT company.name, COALESCE(SUM(game.users_number), 0) AS total_users
-FROM company
-LEFT JOIN publish ON company.company_id = publish.company_id
-LEFT JOIN game ON publish.game_id = game.game_id
-GROUP BY company.company_id
-ORDER BY total_users DESC 
-LIMIT 4;
-'''
-query_2 = '''
-SELECT genre.name AS genre_name, COUNT(game_genre.genre_id) AS usage_count
-FROM genre
-LEFT JOIN game_genre ON genre.genre_id = game_genre.genre_id
-GROUP BY genre.name
-ORDER BY genre.name;
-'''
+
 query_1 = '''
 SELECT
   c.name AS company_name,
@@ -35,6 +20,25 @@ LEFT JOIN
   develop d ON c.company_id = d.company_id
 GROUP BY
   c.company_id, c.name
+ORDER BY
+  COUNT(DISTINCT p.game_id) + COUNT(DISTINCT d.game_id) DESC
+LIMIT 5;
+'''
+query_2 = '''
+SELECT genre.name AS genre_name, COUNT(game_genre.genre_id) AS usage_count
+FROM genre
+LEFT JOIN game_genre ON genre.genre_id = game_genre.genre_id
+GROUP BY genre.name
+ORDER BY COUNT(game_genre.genre_id) DESC
+LIMIT 5;
+'''
+query_3 = '''
+SELECT company.name, COALESCE(SUM(game.users_number), 0) AS total_users
+FROM company
+LEFT JOIN publish ON company.company_id = publish.company_id
+LEFT JOIN game ON publish.game_id = game.game_id
+GROUP BY company.company_id
+ORDER BY COALESCE(SUM(game.users_number), 0) DESC 
 LIMIT 5;
 '''
 
@@ -60,7 +64,7 @@ with conn:
     bar_ax.set_xticklabels(companies, rotation=45, ha='right')
     bar_ax.set_xlabel('Компанії')
     bar_ax.set_ylabel('Кількість разів')
-    bar_ax.set_title('Кількість разів компанія була згадана як publisher або developer')
+    bar_ax.set_title('Кількість разів компанія була згадана як publisher або developer(топ 5 DESC)')
     cur.execute(query_2)
     genres = []
     total = []
@@ -71,7 +75,7 @@ with conn:
 
     x_range = range(len(genres))
     pie_ax.pie(total, labels=genres, autopct='%1.1f%%')
-    pie_ax.set_title('Частка кожного жанру в іграх')
+    pie_ax.set_title('Частка кожного жанру в іграх(топ 5 DESC)')
 
     cur.execute(query_3)
     companies = []
@@ -92,7 +96,7 @@ with conn:
     graph_ax.set_ylabel('Кількість користувачів')
     graph_ax.set_xticklabels(companies, rotation=45, ha="right")
     graph_ax.plot(companies, users_num, color='blue', marker='o')
-    graph_ax.set_title('Топ 4 компанії за кількістю користувачів')
+    graph_ax.set_title('Топ 5 компанії за кількістю користувачів')
 
 mng = plt.get_current_fig_manager()
 mng.full_screen_toggle()
